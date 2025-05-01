@@ -39,7 +39,7 @@ float PressureSensor::calibrate(void) {
         float CummulativeAverage = 0;
 
         unsigned int i = 0;
-        for (unsigned long time1 = millis(); (time1 + (10 * 1000)) - millis() > (10 * 1000); i += 1) {
+        for (unsigned long time1 = millis(); (millis() - time1) < (10 * 1000); i += 1) {
             CummulativeAverage = (mpl.getPressure() + (i * CummulativeAverage)) / (i + 1);
         }
         mpl.setSeaPressure(CummulativeAverage);

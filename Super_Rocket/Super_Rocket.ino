@@ -40,7 +40,7 @@ void setup() {
   #if PRINT_EN
     Serial.begin(9600);
     Serial.print(apogeeDetected);
-    Serial.print("\t HELLO WORLD\t\n");
+    Serial.print("\t HELLO WORLD\t\r\n");
   #endif
 
   while (!pressureSen.begin());
@@ -124,7 +124,7 @@ void loop() {
       Serial.println("Warming up... waiting for stable pressure.");
     #endif
     // Once the last warmup tick finishes, set a valid minPressure
-    if (stablePressureReadings == pressureWarmupCount) {
+    if (stablePressureReadings >= pressureWarmupCount) {
       minPressure = pressure;
       #if PRINT_EN
         Serial.print("Warmup complete. Initial minPressure set to: ");
