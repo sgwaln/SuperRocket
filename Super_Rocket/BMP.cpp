@@ -18,19 +18,19 @@ bmp.setIIRFilterCoeff(BMP3_IIR_FILTER_COEFF_3);
 bmp.setOutputDataRate(BMP3_ODR_50_HZ);
 
 
-bool PressureSensor::begin(void) {
+bool pressuresensor::begin(void) {
     return true;
 }
 
-float PressureSensor::calibrate(void) {
+float pressuresensor::calibrate(void) {
     return SEALEVELPRESSURE_HPA;
 }
 
-float PressureSensor::getPressure(void) {
+float pressuresensor::getPressure(void) {
     return -1;
 }
 
-float PressureSensor::getAltitude(void) {
+float pressuresensor::getAltitude(void) {
     return -1;
 }
 

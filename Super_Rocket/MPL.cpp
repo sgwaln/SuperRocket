@@ -5,11 +5,11 @@
 #include <Adafruit_MPL3115A2.h>
 Adafruit_MPL3115A2 mpl;
 
-bool PressureSensor::begin(void) {
+bool pressuresensor::begin(void) {
     return mpl.begin();
 }
 
-float PressureSensor::calibrate(void) {
+float pressuresensor::calibrate(void) {
     // Going to get a running average for a few seconds, then set Sea Pressure to that
     float CummulativeAverage = 0;
 
@@ -21,11 +21,11 @@ float PressureSensor::calibrate(void) {
     return CummulativeAverage;
 }
 
-float PressureSensor::getPressure(void) {
+float pressuresensor::getPressure(void) {
     return mpl.getPressure();
 }
 
-float PressureSensor::getAltitude(void) {
+float pressuresensor::getAltitude(void) {
     return mpl.getAltitude();
 }
 
