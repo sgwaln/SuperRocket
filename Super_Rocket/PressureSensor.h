@@ -11,16 +11,16 @@
     #define BMP_MOSI 11
     #define BMP_CS 10
 #elif PRESSURE_SENSOR == MPL3115A2
-    #define MPL_ADDR 0x13
+    #define MPL_ADDR 13
     #define MPL_SCL 12
     #define MPL_SDA 11
 #else
     #error "Incompatiable Pressure Sensor"
 #endif
 
-class PressureSensor {
+class pressuresensor {
     public:
-        // PressureSensor(void);
+        // pressuresensor(void);
         bool begin(void);
         float calibrate(void);
         float getPressure(void);

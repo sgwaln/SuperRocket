@@ -11,7 +11,7 @@ Code for appogee detection and parachute launch
 #include <DFRobot_LIS.h>
 #include <Servo.h> 
 
-// I really like state machines, so I made it state bassed, I think whenever possibile you should use a state machine
+// I think whenever possibile you should use a state machine
 enum rocket_states {
   waiting,
   launch,
@@ -23,7 +23,7 @@ unsigned long prevTime = 0;
 float minPressure = 9999;
 float velocity = 0;
 
-PressureSensor press_sen;
+pressuresensor press_sen;
 DFRobot_H3LIS200DL_I2C acce(&Wire, ACCEL_ADDR);
 Servo Servo1;
 
