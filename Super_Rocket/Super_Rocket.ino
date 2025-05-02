@@ -11,7 +11,7 @@ Code for appogee detection and parachute launch
 #include <DFRobot_LIS.h>
 #include <Servo.h> 
 
-// I really like state diagrams, so I made it state bassed, I think that makes it more readable
+// I really like state machines, so I made it state bassed, I think whenever possibile you should use a state machine
 enum rocket_states {
   waiting,
   launch,
@@ -23,7 +23,7 @@ unsigned long prevTime = 0;
 float minPressure = 9999;
 float velocity = 0;
 
-PressureSensor pressureSen;
+PressureSensor press_sen;
 DFRobot_H3LIS200DL_I2C acce(&Wire, ACCEL_ADDR);
 Servo Servo1;
 
@@ -35,8 +35,8 @@ void setup() {
     Serial.print("------- HELLO WORLD -------\r\n");
   #endif
 
-  while (!pressureSen.begin());
-  float sealevel = pressureSen.calibrate();
+  while (!press_sen.begin());
+  float sealevel = press_sen.calibrate();
 
   #if PRINT_EN
     Serial.print("Ground Pressure "); 
@@ -55,7 +55,7 @@ void setup() {
 
 void loop() {
 
-  float pressure = pressureSen.getPressure();
+  float pressure = press_sen.getPressure();
   long az = acce.readAccZ() - 1;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////  Detecting Launch
