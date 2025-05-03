@@ -22,6 +22,7 @@ rocket_states state = waiting;
 unsigned long prevTime = 0;
 float minPressure = 9999;
 float velocity = 0;
+unsigned long eggStart = 0;
 
 pressuresensor press_sen;
 DFRobot_H3LIS200DL_I2C acce(&Wire, ACCEL_ADDR);
@@ -36,11 +37,11 @@ void setup() {
   #endif
 
   while (!press_sen.begin());
-  float sealevel = press_sen.calibrate();
+  minPressure = press_sen.calibrate();
 
   #if PRINT_EN
     Serial.print("Ground Pressure "); 
-    Serial.print(sealevel);
+    Serial.print(minPressure);
     Serial.print(" hPa\r\n");
   #endif
 
@@ -53,30 +54,23 @@ void setup() {
   Servo1.write(90);
 }
 
+
+
 void loop() {
 
-  float pressure = press_sen.getPressure();
-  long az = acce.readAccZ() - 1;
-
+  long az = acce.readAccZ(); // Removing 1g of gravity
+  Serial.println(az);
 ////////////////////////////////////////////////////////////////////////////////////////////////  Detecting Launch
   if (state == waiting)  {
-    #if PRINT_EN
-      Serial.print("Pressure: ");
-      Serial.print(pressure);
-      Serial.print(" hPa \r\n MinPressure: ");
-      Serial.print(minPressure);
-      Serial.print(" hPa \r\n Velocity: ");
-      Serial.print(velocity);
-      Serial.print(" m/s\r\n");
-    #endif
 
-    if (abs(az) < (0.5 / 9.81)) {
+    if (abs(az) < 0.5) {
       az = 0;
     }
 
     if (az < -4) {
       velocity = 0;
       prevTime = millis();
+      eggStart = prevTime;
       state = launch;
       #if PRINT_EN
         Serial.print("LAUNCH DETECTED, BON VOYAGE\r\n");
@@ -84,24 +78,28 @@ void loop() {
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////  In Flight
   } else if (state == launch) {
+    float pressure = press_sen.getPressure();
     unsigned long now = millis();
-    float dt = (now - prevTime) / 1000.0;
+    float dt = (now - prevTime) / 1000;
     prevTime = now;
-    velocity += (az * -9.81 * dt);
-    if (pressure < minPressure) {
-      minPressure = pressure;
+    velocity += az * -9.81 * dt;
+
+    if ((eggStart + (EGG_STOP * 1000) > now) || (pressure >= minPressure + PRESSURE_MARGIN) /* && (abs(velocityAtMinPressure) < 0.5)) */) {
+      state = apogee;
+      #if PRINT_EN
+        Serial.print("APOGEE DETECTED, AUTOBOTS ROLL OUT\r\n");
+      #endif
     }
 
-    if ((pressure >= minPressure + 0.50) /* && (abs(velocityAtMinPressure) < 0.5)) */) {
-      state = apogee;
-      Serial.print("APOGEE DETECTED, AUTOBOTS ROLL OUT\r\n");
+    if (pressure < minPressure) {
+      minPressure = pressure;
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////  Apogee Detected
   } else if (state == apogee) {
     #if PRINT_EN
       Serial.print("Velocity at Apogee: ");
-      Serial.println(velocity);
-      Serial.print("JOB DONE, FARWELL\r\n");
+      Serial.print(velocity);
+      Serial.print("\r\nJOB DONE, FARWELL\r\n");
     #endif
     
     for (int pos = 90; pos >= 0; pos -= 2) {
@@ -109,6 +107,6 @@ void loop() {
       delay(20);
     }    
 
-    return;
+    while( 1 == 1);
   }
 }
