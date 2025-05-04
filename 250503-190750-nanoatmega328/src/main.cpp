@@ -8,7 +8,7 @@ Code for appogee detection and parachute launch
 
 #include "Parameters.h"
 #include "PressureSensor.h"
-#include <DFRobot_LIS.h>
+#include <Adafruit_MPU6050.h>
 #include <Servo.h> 
 
 // I think whenever possibile you should use a state machine
@@ -24,10 +24,9 @@ float minPressure = 9999;
 float velocity = 0;
 unsigned long eggStart = 0;
 
-pressuresensor press_sen;
-// DFRobot_H3LIS200DL_I2C acce(&Wire, ACCEL_ADDR);
+pressuresensor barrometer;
 Servo Servo1;
-
+Adafruit_MPU6050 mpu;
 
 
 void setup() {
@@ -38,8 +37,13 @@ void setup() {
 
   Wire.begin();
 
-  while (!press_sen.begin());
-  minPressure = press_sen.calibrate();
+  if (!barrometer.begin()) {
+    #if PRINT_EN
+      Serial.print("Error Setting up Barrometer\r\n");
+    #endif
+  }
+
+  minPressure = barrometer.calibrate();
 
   #if PRINT_EN
     Serial.print("Ground Pressure "); 
@@ -47,32 +51,44 @@ void setup() {
     Serial.print(" hPa\r\n");
   #endif
 
-  acce.begin();
-  acce.setRange(DFRobot_LIS::eH3lis200dl_100g);
-  acce.setAcquireRate(DFRobot_LIS::eNormal_100HZ);
+  if (!mpu.begin()) {
+    #if PRINT_EN
+      Serial.print("MPU Setup Error\r\n");
+    #endif
+  }
 
   Servo1.attach(SERVO_PIN); 
+
+  mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
+  mpu.setGyroRange(MPU6050_RANGE_250_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_44_HZ);
 }
 
 
 void loop() {
 ////////////////////////////////////////////////////////////////////////////////////////////////  Always do
-  int ax = acce.readAccX();
-  int ay = acce.readAccY();
-  int az = acce.readAccZ();
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
-  float pressure = press_sen.getPressure();
+  float pressure = barrometer.getPressure();
 
   #if PRINT_EN
-    Serial.print("X+: ");
-    Serial.print(ax);
-    Serial.print(" g\tY+: ");
-    Serial.print(ay);
-    Serial.print(" g\tZ+: ");
-    Serial.print(az);
-    Serial.print("\r\nPressure: ");
+    Serial.print("Acceleration X: ");
+    Serial.print(a.acceleration.x);
+    Serial.print(" \tY: ");
+    Serial.print(a.acceleration.y);
+    Serial.print(" \tZ: ");
+    Serial.print(a.acceleration.z);
+    Serial.print(" m/s\r\nPressure: ");
     Serial.print(pressure);
     Serial.print(" hPa\r\n");
+    Serial.print("Rotation X: ");
+    Serial.print(g.gyro.x);
+    Serial.print(", Y: ");
+    Serial.print(g.gyro.y);
+    Serial.print(", Z: ");
+    Serial.print(g.gyro.z);
+    Serial.print(" rad/s\r\n");
   #endif
 
   // Could also see if pressure is decreasing. This would be effectively the first derivative test to find a minium
@@ -92,7 +108,7 @@ void loop() {
 ////////////////////////////////////////////////////////////////////////////////////////////////  Detecting Launch State
   if (state == waiting)  {
 
-    if (az < -4) {
+    if ((a.acceleration.x * a.acceleration.x) + (a.acceleration.y * a.acceleration.y) + (a.acceleration.z * a.acceleration.z) > 4 * 4 * 9.81 * 9.81) {
       velocity = 0;
       prevTime = millis();
       eggStart = prevTime;
@@ -108,8 +124,7 @@ void loop() {
     if ((now - eggStart > (EGG_STOP * 1000)) /* && (abs(velocityAtMinPressure) < 0.5)) */) {
       state = apogee;
       #if PRINT_EN
-        Serial.print("Egg timer remaining: ");
-        Serial.print(((now - eggStart)/1000) - EGG_STOP);
+        Serial.print("Egg Timer Expired\r\n");
       #endif
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////  Apogee Detected State
