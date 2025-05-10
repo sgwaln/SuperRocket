@@ -18,7 +18,12 @@ enum rocket_states {
   apogee,
 };
 
-rocket_states state = waiting;
+#if TEST_MODE 
+  rocket_states state = apogee;
+#else
+  rocket_states state = waiting;
+#endif
+
 unsigned long prevTime = 0;
 float minPressure = 9999;
 float velocity = 0;
@@ -27,7 +32,6 @@ unsigned long eggStart = 0;
 pressuresensor barrometer;
 Servo Servo1;
 Adafruit_MPU6050 mpu;
-
 
 void setup() {
   #if PRINT_EN
@@ -43,7 +47,9 @@ void setup() {
     #endif
   }
 
-  minPressure = barrometer.calibrate();
+  #if TEST_MODE == 0
+    minPressure = barrometer.calibrate();
+  #endif
 
   #if PRINT_EN
     Serial.print("Ground Pressure "); 
@@ -58,10 +64,15 @@ void setup() {
   }
 
   Servo1.attach(SERVO_PIN); 
-
+  Servo1.write(0);
+  
   mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
   mpu.setGyroRange(MPU6050_RANGE_250_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_44_HZ);
+
+  #if TEST_MODE
+    delay(30*1000);
+  #endif
 }
 
 
@@ -93,7 +104,7 @@ void loop() {
 
   // Could also see if pressure is decreasing. This would be effectively the first derivative test to find a minium
   // If a turning point in pressure is detected, go to apogee state no matter what, even if launch hasn't been detected
-  if ((pressure >= minPressure + PRESSURE_MARGIN) /*|| (pressure - prevPressure) < 0*/) {
+  if ((pressure >= minPressure + PRESSURE_MARGIN) && !TEST_MODE /*|| (pressure - prevPressure) < 0*/) {
     state = apogee;
     #if PRINT_EN
       Serial.print("\r\nMinium Pressure: ");
@@ -134,12 +145,23 @@ void loop() {
       Serial.print(velocity);
       Serial.print("\r\nJOB DONE, FARWELL\r\n");
     #endif
-    
-    for (int pos = 90; pos >= 0; pos -= 2) {
+
+    for (int pos = 0; pos <= 180; pos += 2) {
       Servo1.write(pos);
-      delay(20);
+      #if PRINT_EN
+        Serial.println(pos);
+      #endif
+      delay(25);
     }    
 
-    while( 1 == 1);
+    for (int pos = 180; pos >= 0; pos -= 2) {
+      Servo1.write(pos);
+      #if PRINT_EN
+        Serial.println(pos);
+      #endif
+      delay(25);
+    }    
+
+    while(1 == 1);
   }
 }
